@@ -6,6 +6,8 @@ var scope;
     } else {
 	      scope = global;
 	  }
+    scope.kimDebugData = {a: 'a'};
+
     if (scope.artoolkit_wasm_url) {
         var downloadWasm = function(url) {
             return new Promise(function (resolve, reject) {

@@ -174,8 +174,8 @@ var compile_arlib = format(EMCC + ' ' + INCLUDES + ' '
  		OUTPUT_PATH);
 
 var compile_combine = format(EMCC + ' ' + INCLUDES + ' '
-	+ ' {OUTPUT_PATH}libar.bc ' + MAIN_SOURCES
-	+ FLAGS + ' -s WASM=0' + ' '  + DEBUG_FLAGS + DEFINES + ' -o {OUTPUT_PATH}{BUILD_FILE} ',
+	+ ' {OUTPUT_PATH}libar.bc ' + MAIN_SOURCES + EXPORTED_FUNCTIONS
+	+ FLAGS + ' -s WASM=0' + ' '  + DEBUG_FLAGS + DEFINES + PRE_FLAGS + ' -o {OUTPUT_PATH}{BUILD_FILE} ',
 	 OUTPUT_PATH, OUTPUT_PATH, BUILD_DEBUG_FILE);
 
 var compile_combine_min = format(EMCC + ' '  + INCLUDES + ' '
@@ -237,12 +237,12 @@ function addJob(job) {
 	jobs.push(job);
 }
 
-addJob(clean_builds);
+//addJob(clean_builds);
 addJob(compile_arlib);
 //addJob(compile_kpm);
 //addJob(compile_combine);
 addJob(compile_wasm);
-addJob(compile_combine_min);
+//addJob(compile_combine_min);
 // addJob(compile_all);
 
 runJob();

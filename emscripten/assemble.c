@@ -126,6 +126,7 @@ static int   readImageFromFile(const char *filename, ARUint8 **image_p, int *xsi
 static int   setDPI( void );
 static void  write_exitcode(void);
 
+
 int EMSCRIPTEN_KEEPALIVE createImageSet(ARUint8 *imageIn, float dpiIn, int xsizeIn, int ysizeIn, int ncIn, char * cmdStr )
 {
     AR2JpegImageT       *jpegImage = NULL;
@@ -396,6 +397,32 @@ char *filename = "asa";
     }
     ARLOGi("  Done.\n");
 
+    ARLOGi("[KIM DEBUG].\n");
+    EM_ASM_({
+        var a = arguments;
+        kimDebugData.imageSets = [];
+        kimDebugData.featureMaps = [];
+        kimDebugData.featureSets = [];
+        for (let i = 0; i < a[0]; i++) { 
+            kimDebugData.imageSets.push([]);
+            kimDebugData.featureMaps.push([]);
+            kimDebugData.featureSets.push([]);
+        }
+    }, imageSet->num);
+    for (int k = 0; k < imageSet->num; k++) {
+        AR2ImageT *debugImage = imageSet->scale[k];
+        for (int i = 0; i < debugImage->xsize; i++) {
+            for (int j = 0; j < debugImage->ysize; j++) {
+                int pos = j * debugImage->xsize + i;
+                EM_ASM_({
+                    var a = arguments;
+                    kimDebugData.imageSets[a[0]][a[1]] = a[2];
+                }, k, pos, (int)*(debugImage->imgBW + pos));
+            }
+        }
+    }
+    ARLOGi("[KIM DEBUG END].\n");
+
     if (genfset) {
         arMalloc( featureSet, AR2FeatureSetT, 1 );                      // A featureSet with a single image,
         arMalloc( featureSet->list, AR2FeaturePointsT, imageSet->num ); // and with 'num' scale levels of this image.
@@ -411,6 +438,7 @@ char *filename = "asa";
                                           AR2_DEFAULT_TS1*AR2_TEMP_SCALE, AR2_DEFAULT_TS2*AR2_TEMP_SCALE,
                                           AR2_DEFAULT_GEN_FEATURE_MAP_SEARCH_SIZE1, AR2_DEFAULT_GEN_FEATURE_MAP_SEARCH_SIZE2,
                                           AR2_DEFAULT_MAX_SIM_THRESH2, AR2_DEFAULT_SD_THRESH2 );
+
             if( featureMap == NULL ) {
                 ARLOGe("Error!!\n");
                 EXIT(E_DATA_PROCESSING_ERROR);
@@ -462,6 +490,44 @@ char *filename = "asa";
                  */
                 featureSet->list[i].maxdpi = scale2*0.8f + scale1*0.2f;
             }
+
+            ARLOGi("[KIM DEBUG START].\n");
+            float *fMap = featureMap->map;
+            for (int ii = 0; ii < featureMap->xsize; ii++) {
+                for (int jj = 0; jj < featureMap->ysize; jj++) {
+                    int pos = jj * featureMap->xsize + ii;
+                    EM_ASM_({
+                        var a = arguments;
+                        kimDebugData.featureMaps[a[0]][a[1]] = a[2];
+                    }, i, pos, (float)*(fMap + pos));
+                }
+            }
+
+            EM_ASM_({
+                var a = arguments;
+                kimDebugData.featureSets[a[0]] = ({
+                    maxdpi: a[1],
+                    mindpi: a[2],
+                    scale: a[3],
+                    num: a[4],
+                    coords: [],
+                });
+            }, i, featureSet->list[i].maxdpi, featureSet->list[i].mindpi, featureSet->list[i].scale, featureSet->list[i].num);
+
+            for (int k = 0; k < featureSet->list[i].num; k++) {
+                EM_ASM_({
+                    var a = arguments;
+                    kimDebugData.featureSets[a[0]].coords.push({
+                        x: a[1],
+                        y: a[2],
+                        mx: a[3],
+                        my: a[4],
+                        maxSim: a[5]
+                    });
+                }, i, featureSet->list[i].coord[k].x, featureSet->list[i].coord[k].y, featureSet->list[i].coord[k].mx, featureSet->list[i].coord[k].my, featureSet->list[i].coord[k].maxSim); 
+            }
+            ARLOGi("[KIM DEBUG END].\n");
+
             
             ar2FreeFeatureMap( featureMap );
         }
@@ -475,6 +541,8 @@ char *filename = "asa";
         ARLOGi("  Done.\n");
         ar2FreeFeatureSet( &featureSet );
     }
+
+return 0;
     
     if (genfset3) {
         ARLOGi("Generating FeatureSet3...\n");
@@ -676,8 +744,6 @@ static int readImageFromFile(const char *filename, ARUint8 **image_p, int *xsize
     
     return 0;
 }
-
-
 
 static void write_exitcode(void)
 {
