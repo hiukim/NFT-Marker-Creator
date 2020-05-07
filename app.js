@@ -34,7 +34,7 @@ var imageData = {
 }
 
 Module.onRuntimeInitialized = function(){
-    
+
     for (let j = 2; j < process.argv.length; j++) {
         if(process.argv[j].indexOf('-i') !== -1 || process.argv[j].indexOf('-I') !== -1){
             foundInputPath.b = true;
@@ -105,7 +105,7 @@ Module.onRuntimeInitialized = function(){
     }
 
     console.log("\nConfidence level: [" + txt + "] %f/5 || Entropy: %f || Current max: 5.17 min: 4.6", confidence.l, confidence.e)
-    
+
     if(!noConf){
         const answer = readlineSync.question(`\nDo you want to continue? (Y/N)\n`);
 
@@ -114,17 +114,19 @@ Module.onRuntimeInitialized = function(){
             process.exit(1);
         }
     }
-    
+
     let paramStr = params.join(' ');
 
     let StrBuffer = Module._malloc(paramStr.length + 1);
     Module.writeStringToMemory(paramStr, StrBuffer);
-      
+
     let heapSpace = Module._malloc(imageData.array.length * imageData.array.BYTES_PER_ELEMENT);
     Module.HEAPU8.set(imageData.array, heapSpace);
 
     Module._createImageSet(heapSpace, imageData.dpi, imageData.sizeX, imageData.sizeY, imageData.nc, StrBuffer)
-    
+    //console.log("kimdebug: ", kimDebugData);
+    //fs.writeFileSync('/Users/hiukim/Desktop/kimDebugData.txt', JSON.stringify(kimDebugData));
+
     Module._free(heapSpace);
     Module._free(StrBuffer);
 
@@ -156,7 +158,7 @@ Module.onRuntimeInitialized = function(){
         let demoHTML = fs.readFileSync("./demo/nft.html").toString('utf8').split("\n");
         addNewMarker(demoHTML, fileName);
         let newHTML = demoHTML.join('\n');
-    
+
         fs.writeFileSync("./demo/nft.html",newHTML,{encoding:'utf8',flag:'w'});
 
         const files = fs.readdirSync(markerDir);
@@ -165,17 +167,17 @@ Module.onRuntimeInitialized = function(){
               if (err) throw err;
             });
         }
-    
+
         fs.writeFileSync(markerDir + fileName + ext, content);
         fs.writeFileSync(markerDir + fileName + ext2, contentFset);
         fs.writeFileSync(markerDir + fileName + ext3, contentFset3);
-    
+
         console.log("Finished!\nTo run demo use: 'npm run demo'");
     }
 }
 
 function useJPG(buf) {
-    
+
     inkjet.decode(buf, function (err, decoded) {
         if (err) {
             console.log("\n" + err + "\n");
@@ -202,7 +204,7 @@ function useJPG(buf) {
             imageData.array = uint;
         }
     });
-    
+
     inkjet.exif(buf, function (err, metadata) {
         if (err) {
             console.log("\n" + err + "\n");
@@ -305,11 +307,14 @@ function usePNG(buf) {
             newArr.push(data[j]);
         }
     } else if (verifyColorSpace == 3) {
-        for (let j = 0; j < data.length; j += 4) {
+        for (let j = 0; j < data.length; j++) {
             newArr.push(data[j]);
-            newArr.push(data[j + 1]);
-            newArr.push(data[j + 2]);
         }
+        //for (let j = 0; j < data.length; j += 4) {
+        //    newArr.push(data[j]);
+        //    newArr.push(data[j + 1]);
+        //    newArr.push(data[j + 2]);
+        //}
     }
 
     let uint = new Uint8Array(newArr);
@@ -381,9 +386,12 @@ function rgbaToRgb(arr) {
 
     for (let i = 0; i < arr.length; i += 4) {
 
-        let r = parseInt(255 * (((1 - arr[i + 3]) * BGColor.R) + (arr[i + 3] * arr[i])));
-        let g = parseInt(255 * (((1 - arr[i + 3]) * BGColor.G) + (arr[i + 3] * arr[i + 1])));
-        let b = parseInt(255 * (((1 - arr[i + 3]) * BGColor.B) + (arr[i + 3] * arr[i + 2])));
+        //let r = parseInt(255 * (((1 - arr[i + 3]) * BGColor.R) + (arr[i + 3] * arr[i])));
+        //let g = parseInt(255 * (((1 - arr[i + 3]) * BGColor.G) + (arr[i + 3] * arr[i + 1])));
+        //let b = parseInt(255 * (((1 - arr[i + 3]) * BGColor.B) + (arr[i + 3] * arr[i + 2])));
+        let r = arr[i];
+        let g = arr[i+1];
+        let b = arr[i+2];
 
         newArr.push(r);
         newArr.push(g);
